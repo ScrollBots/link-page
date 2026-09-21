@@ -1,0 +1,2723 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a1a">
+  <title>2048 نئون</title>
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      font-family: 'Vazirmatn', sans-serif;
+    }
+
+    :root {
+      --bg-1: #0a0a1a;
+      --bg-2: #1a0a2e;
+      --neon-pink: #ff2ecc;
+      --neon-cyan: #00f0ff;
+      --neon-purple: #8b5cf6;
+      --neon-gold: #fbbf24;
+      --glass: rgba(255, 255, 255, 0.06);
+      --glass-border: rgba(255, 255, 255, 0.12);
+      --bottom-nav-h: 68px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --gap: 8px;
+      --radius-md: 16px;
+      --radius-lg: 22px;
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 20% 20%, #2a0a4a 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, #0a2a4a 0%, transparent 50%),
+        linear-gradient(135deg, var(--bg-1), var(--bg-2));
+      color: #fff;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 30% 40%, rgba(255, 46, 204, 0.12), transparent 40%),
+        radial-gradient(circle at 70% 60%, rgba(0, 240, 255, 0.10), transparent 40%);
+      pointer-events: none;
+      animation: floatBg 10s ease-in-out infinite alternate;
+      z-index: 0;
+    }
+
+    @keyframes floatBg {
+      from {
+        transform: translate(0, 0) scale(1);
+      }
+
+      to {
+        transform: translate(30px, -30px) scale(1.08);
+      }
+    }
+
+    #app {
+      position: relative;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      z-index: 1;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .page-container {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 14px;
+      padding-bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + 20px);
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .page {
+      display: none;
+      animation: pageIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 100%;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes pageIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .bottom-nav-wrapper {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 8px 14px calc(8px + var(--safe-bottom));
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .bottom-nav {
+      width: 100%;
+      max-width: 440px;
+      height: var(--bottom-nav-h);
+      background: var(--glass);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      display: flex;
+      justify-content: space-evenly;
+      align-items: center;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      pointer-events: all;
+      padding: 0 8px;
+    }
+
+    .nav-item {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.45);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.25s;
+      padding: 6px 4px;
+      position: relative;
+    }
+
+    .nav-item .nav-icon {
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .nav-item .nav-icon svg {
+      width: 100%;
+      height: 100%;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: all 0.3s;
+    }
+
+    .nav-item .nav-label {
+      font-size: 11px;
+      font-weight: 600;
+      transition: all 0.25s;
+    }
+
+    .nav-item.active {
+      color: #fff;
+    }
+
+    .nav-item .dot {
+      position: absolute;
+      bottom: 8px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: transparent;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .nav-item.active .dot {
+      background: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
+      box-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink);
+      transform: scale(1.2);
+    }
+
+    .nav-item.active .nav-icon {
+      transform: translateY(-1px);
+      filter: drop-shadow(0 0 8px rgba(255, 46, 204, 0.6));
+    }
+
+    .nav-item.active .nav-icon svg {
+      stroke: #fff;
+      stroke-width: 2.3;
+    }
+
+    .card {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 16px;
+      background: linear-gradient(180deg, var(--neon-pink), var(--neon-cyan));
+      border-radius: 2px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: var(--radius-md);
+      color: #fff;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+      border: none;
+      box-shadow: 0 10px 30px rgba(255, 46, 204, 0.35);
+    }
+
+    .btn-large {
+      padding: 16px;
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+
+    .btn-narrow {
+      max-width: 220px;
+    }
+
+    .btn-danger {
+      color: #ff6b6b;
+    }
+
+    .center-text {
+      text-align: center;
+    }
+
+    .mt-8 {
+      margin-top: 8px;
+    }
+
+    .mt-12 {
+      margin-top: 12px;
+    }
+
+    .hint-text {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+      line-height: 2;
+    }
+
+    .version-text {
+      text-align: center;
+      padding: 16px 0;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .home-header {
+      text-align: center;
+      padding: 14px 0 10px;
+    }
+
+    .home-logo {
+      font-size: 48px;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -2px;
+      filter: drop-shadow(0 0 24px rgba(255, 46, 204, 0.5));
+      line-height: 1;
+      cursor: default;
+    }
+
+    .home-subtitle {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 4px;
+      letter-spacing: 3px;
+    }
+
+    .stats-grid,
+    .game-scores {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--gap);
+      margin-bottom: 12px;
+    }
+
+    .stat-card {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: var(--radius-md);
+      padding: 10px 6px;
+      text-align: center;
+      transition: transform 0.2s;
+    }
+
+    .stat-card.pop {
+      transform: scale(1.08);
+    }
+
+    .stat-card .stat-label {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.5);
+      letter-spacing: 0.5px;
+      margin-bottom: 3px;
+    }
+
+    .stat-card .stat-value {
+      font-size: 17px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-card.gold {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.1));
+      border-color: rgba(251, 191, 36, 0.35);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 16px rgba(251, 191, 36, 0.15);
+    }
+
+    .stat-card.gold .stat-label {
+      color: rgba(251, 191, 36, 0.85);
+    }
+
+    .stat-card.gold .stat-value {
+      background: linear-gradient(135deg, #fde047, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.4));
+    }
+
+    /* ═══ تبلیغ کانال چرخشی ═══ */
+    .channel-ad {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 6 / 19;
+      max-height: 200px;
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      cursor: pointer;
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      transition: transform 0.2s;
+      background: linear-gradient(135deg, #1a0a2e, #0a0a1a);
+    }
+
+    .channel-ad:active {
+      transform: scale(0.98);
+    }
+
+    .channel-ad-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s;
+      display: block;
+    }
+
+    .channel-ad:hover .channel-ad-img {
+      transform: scale(1.04);
+    }
+
+    /* برچسب تبلیغ بالا-چپ */
+    .channel-ad-tag {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 3;
+      background: rgba(255, 46, 204, 0.2);
+      border: 1px solid rgba(255, 46, 204, 0.5);
+      color: var(--neon-pink);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 5px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 4px 16px rgba(255, 46, 204, 0.25);
+    }
+
+    /* حالت جایگزین وقتی عکس لود نشده */
+    .channel-ad.no-image {
+      background:
+        repeating-linear-gradient(45deg,
+          rgba(255, 46, 204, 0.05), rgba(255, 46, 204, 0.05) 10px,
+          rgba(0, 240, 255, 0.05) 10px, rgba(0, 240, 255, 0.05) 20px),
+        rgba(10, 10, 26, 0.6);
+      border: 2px dashed rgba(255, 46, 204, 0.4);
+    }
+
+    .channel-ad.no-image::before {
+      content: '📢';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 70px;
+      opacity: 0.4;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .channel-ad.no-image::after {
+      content: 'جایگاه تبلیغات';
+      position: absolute;
+      top: calc(50% + 55px);
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.4;
+      }
+
+      50% {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 0.6;
+      }
+    }
+
+    /* اگه عکس لود نشد */
+    .channel-ad.no-image::before {
+      content: '📢';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 80px;
+      opacity: 0.3;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.3;
+      }
+
+      50% {
+        transform: translate(-50%, -50%) scale(1.15);
+        opacity: 0.5;
+      }
+    }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-top: 2px;
+    }
+
+    .page-header h1 {
+      font-size: 20px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--gap);
+      margin-bottom: 12px;
+    }
+
+    .btn .cost {
+      font-size: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 2px 6px;
+      border-radius: 6px;
+      margin-right: 4px;
+    }
+
+    .board-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      background: rgba(10, 10, 26, 0.6);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: var(--radius-lg);
+      padding: 10px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(139, 92, 246, 0.1);
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .grid-bg {
+      position: absolute;
+      inset: 10px;
+      display: grid;
+      gap: var(--gap);
+    }
+
+    .cell-bg {
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .tiles {
+      position: absolute;
+      inset: 10px;
+      pointer-events: none;
+    }
+
+    .tile {
+      position: absolute;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: clamp(16px, 5.5vw, 28px);
+      transition:
+        transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        top 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        left 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: transform, top, left;
+      color: #fff;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .tile.new {
+      animation: spawn 0.2s ease;
+    }
+
+    @keyframes spawn {
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .tile.merged {
+      animation: mergeAnim 0.25s ease;
+    }
+
+    @keyframes mergeAnim {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.22);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .t2 {
+      background: linear-gradient(135deg, #3a3a5a, #4a4a6a);
+    }
+
+    .t4 {
+      background: linear-gradient(135deg, #4a4a8a, #5a5a9a);
+    }
+
+    .t8 {
+      background: linear-gradient(135deg, #5b21b6, #7c3aed);
+      box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
+    }
+
+    .t16 {
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      box-shadow: 0 0 24px rgba(168, 85, 247, 0.6);
+    }
+
+    .t32 {
+      background: linear-gradient(135deg, #db2777, #ec4899);
+      box-shadow: 0 0 24px rgba(236, 72, 153, 0.6);
+    }
+
+    .t64 {
+      background: linear-gradient(135deg, #ec4899, #f472b6);
+      box-shadow: 0 0 28px rgba(244, 114, 182, 0.7);
+    }
+
+    .t128 {
+      background: linear-gradient(135deg, #0891b2, #06b6d4);
+      box-shadow: 0 0 28px rgba(6, 182, 212, 0.7);
+    }
+
+    .t256 {
+      background: linear-gradient(135deg, #06b6d4, #22d3ee);
+      box-shadow: 0 0 32px rgba(34, 211, 238, 0.8);
+    }
+
+    .t512 {
+      background: linear-gradient(135deg, #f59e0b, #fbbf24);
+      box-shadow: 0 0 32px rgba(251, 191, 36, 0.8);
+      color: #1a1a2e;
+    }
+
+    .t1024 {
+      background: linear-gradient(135deg, #fbbf24, #fde047);
+      box-shadow: 0 0 36px rgba(253, 224, 71, 0.9);
+      color: #1a1a2e;
+    }
+
+    .t2048 {
+      background: linear-gradient(135deg, #ff2ecc, #00f0ff);
+      box-shadow: 0 0 40px rgba(255, 46, 204, 1);
+      animation: glowTile 1.5s ease-in-out infinite alternate;
+    }
+
+    .tbig {
+      background: linear-gradient(135deg, #ff2ecc, #8b5cf6, #00f0ff);
+      box-shadow: 0 0 44px rgba(255, 46, 204, 1);
+    }
+
+    @keyframes glowTile {
+      from {
+        box-shadow: 0 0 30px rgba(255, 46, 204, 0.8);
+      }
+
+      to {
+        box-shadow: 0 0 50px rgba(0, 240, 255, 1);
+      }
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 10, 26, 0.9);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 10;
+      text-align: center;
+    }
+
+    .overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .overlay h2 {
+      font-size: 26px;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .overlay p {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 13px;
+    }
+
+    .hint {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .setting-row:last-child {
+      border-bottom: none;
+    }
+
+    .setting-label {
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .setting-label .icon {
+      font-size: 18px;
+    }
+
+    .grid-options {
+      display: flex;
+      gap: 5px;
+    }
+
+    .grid-opt {
+      padding: 7px 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
+      border-radius: 11px;
+      color: rgba(255, 255, 255, 0.6);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .grid-opt.active {
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 4px 14px rgba(255, 46, 204, 0.4);
+    }
+
+    .grid-opt.locked {
+      opacity: 0.55;
+      border-color: rgba(251, 191, 36, 0.5);
+      color: rgba(251, 191, 36, 0.9);
+    }
+
+    .grid-opt .lock-icon {
+      font-size: 10px;
+      margin-left: 2px;
+    }
+
+    .toggle {
+      position: relative;
+      width: 46px;
+      height: 26px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 13px;
+      cursor: pointer;
+      transition: all 0.25s;
+      border: 1px solid var(--glass-border);
+      flex-shrink: 0;
+    }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      transition: all 0.25s;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .toggle.on {
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+      border-color: transparent;
+    }
+
+    .toggle.on::after {
+      right: calc(100% - 21px);
+    }
+
+    .lb-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .lb-grid-section {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      margin-bottom: 14px;
+    }
+
+    .lb-grid-title {
+      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .lb-grid-title .badge {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 10px;
+      background: rgba(255, 46, 204, 0.15);
+      border: 1px solid rgba(255, 46, 204, 0.3);
+      color: var(--neon-pink);
+      -webkit-text-fill-color: var(--neon-pink);
+    }
+
+    .lb-empty-small {
+      text-align: center;
+      padding: 16px 10px;
+      color: rgba(255, 255, 255, 0.35);
+      font-size: 12px;
+    }
+
+    .lb-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-md);
+      margin-bottom: 6px;
+    }
+
+    .lb-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .lb-rank {
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
+    }
+
+    .lb-item.top-1 .lb-rank {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      color: #1a1a2e;
+      box-shadow: 0 0 16px rgba(251, 191, 36, 0.6);
+    }
+
+    .lb-item.top-2 .lb-rank {
+      background: linear-gradient(135deg, #c0c0d0, #a0a0b0);
+      color: #1a1a2e;
+    }
+
+    .lb-item.top-3 .lb-rank {
+      background: linear-gradient(135deg, #cd7f32, #a05a20);
+      color: #fff;
+    }
+
+    .lb-item.me {
+      border-color: rgba(255, 46, 204, 0.4);
+      background: rgba(255, 46, 204, 0.06);
+    }
+
+    .lb-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .lb-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lb-date {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.4);
+      margin-top: 2px;
+    }
+
+    .lb-score {
+      font-size: 16px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .profile-avatar {
+      width: 84px;
+      height: 84px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      font-weight: 900;
+      color: #fff;
+      margin: 0 auto 14px;
+      box-shadow: 0 0 30px rgba(255, 46, 204, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .profile-name-display {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .profile-sub {
+      text-align: center;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 16px;
+    }
+
+    .input-group {
+      margin-bottom: 12px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 6px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 13px 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      color: #fff;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .input-group input:focus {
+      border-color: var(--neon-pink);
+      background: rgba(255, 46, 204, 0.05);
+      box-shadow: 0 0 0 3px rgba(255, 46, 204, 0.15);
+    }
+
+    .input-group input::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + 30px);
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(20, 20, 40, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      color: #fff;
+      padding: 11px 18px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 200;
+      opacity: 0;
+      transition: all 0.3s;
+      pointer-events: none;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      max-width: 88%;
+      text-align: center;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 300;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal {
+      background: linear-gradient(135deg, rgba(30, 20, 60, 0.95), rgba(20, 20, 50, 0.95));
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      max-width: 340px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+      animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes modalIn {
+      from {
+        transform: scale(0.85);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .modal h3 {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .modal p {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 18px;
+      line-height: 1.8;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .modal-actions .btn {
+      flex: 1;
+    }
+
+    .welcome-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 5, 15, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .welcome-overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .welcome-card {
+      background: linear-gradient(135deg, rgba(30, 20, 60, 0.95), rgba(20, 20, 50, 0.95));
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 26px 22px;
+      max-width: 360px;
+      width: 100%;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
+    }
+
+    .welcome-title {
+      font-size: 22px;
+      font-weight: 900;
+      text-align: center;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .welcome-sub {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      text-align: center;
+      margin-bottom: 22px;
+      line-height: 1.8;
+    }
+
+    .particle {
+      position: fixed;
+      pointer-events: none;
+      border-radius: 50%;
+      z-index: 100;
+      animation: particleFly 0.6s ease-out forwards;
+    }
+
+    @keyframes particleFly {
+      from {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+      }
+
+      to {
+        transform: translate(var(--tx), var(--ty)) scale(0);
+        opacity: 0;
+      }
+    }
+
+    .admin-only {
+      display: none !important;
+    }
+
+    body.admin-mode .admin-only {
+      display: block !important;
+    }
+
+    body.admin-mode .admin-only.btn,
+    body.admin-mode button.admin-only {
+      display: flex !important;
+    }
+
+    .admin-indicator {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      background: linear-gradient(135deg, #ff6b6b, #dc2626);
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      z-index: 999;
+      box-shadow: 0 4px 14px rgba(220, 38, 38, 0.5);
+      display: none;
+      animation: adminPulse 2s ease-in-out infinite;
+      font-family: 'Vazirmatn', sans-serif;
+    }
+
+    body.admin-mode .admin-indicator {
+      display: block;
+    }
+
+    @keyframes adminPulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+      }
+    }
+
+    @media (max-height: 700px) {
+      .channel-ad {
+        max-height: 260px;
+      }
+
+      .home-logo {
+        font-size: 40px;
+      }
+
+      .home-header {
+        padding: 8px 0 6px;
+      }
+    }
+
+    @media (max-height: 620px) {
+      .channel-ad {
+        max-height: 200px;
+      }
+
+      .home-logo {
+        font-size: 36px;
+      }
+
+      .stats-grid,
+      .game-scores {
+        gap: 6px;
+      }
+
+      .stat-card {
+        padding: 8px 5px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="app">
+
+    <div class="page-container" id="pageContainer">
+
+      <section class="page active" id="page-home">
+        <div class="home-header">
+          <div class="home-logo" id="homeLogo">2048</div>
+          <div class="home-subtitle">NEON EDITION</div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">امتیاز</div>
+            <div class="stat-value" id="homeScore">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">رکورد</div>
+            <div class="stat-value" id="homeBest">0</div>
+          </div>
+          <div class="stat-card gold">
+            <div class="stat-label">سکه</div>
+            <div class="stat-value" id="homeCoins">0</div>
+          </div>
+        </div>
+
+        <button class="btn primary btn-large" id="startGameBtn">شروع بازی</button>
+
+        <!-- ═══ تبلیغ کانال چرخشی ═══ -->
+        <div class="channel-ad" id="channelAd">
+          <div class="channel-ad-tag">تبلیغ</div>
+          <img class="channel-ad-img" id="channelAdImg" src="" alt="تبلیغ">
+        </div>
+
+        <div class="card">
+          <div class="section-title">راهنما</div>
+          <p class="hint-text">
+            اعداد همسان را با کشیدن انگشت به هم برسان تا بزرگ‌تر شوند.
+            به عدد <b style="color: var(--neon-cyan);">2048</b> برس و رکورد بزن!
+          </p>
+        </div>
+      </section>
+
+      <section class="page" id="page-game">
+        <div class="page-header">
+          <h1>بازی</h1>
+        </div>
+
+        <div class="game-scores">
+          <div class="stat-card" id="scoreBox">
+            <div class="stat-label">امتیاز</div>
+            <div class="stat-value" id="score">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">رکورد</div>
+            <div class="stat-value" id="best">0</div>
+          </div>
+          <div class="stat-card gold">
+            <div class="stat-label">سکه</div>
+            <div class="stat-value" id="gameCoins">0</div>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <button class="btn" id="undoBtn">بازگشت <span class="cost">50🪙</span></button>
+          <button class="btn primary" id="newBtn">بازی جدید</button>
+        </div>
+
+        <div class="board-wrap" id="boardWrap">
+          <div class="grid-bg" id="gridBg"></div>
+          <div class="tiles" id="tiles"></div>
+          <div class="overlay" id="overlay">
+            <h2 id="overlayTitle">بازی تمام!</h2>
+            <p id="overlayText"></p>
+            <button class="btn primary btn-narrow" id="overlayBtn">دوباره بازی کن</button>
+          </div>
+        </div>
+
+        <div class="hint">با کشیدن انگشت به سمت بالا ، پایین ، چپ ، راست حرکت کن</div>
+      </section>
+
+      <section class="page" id="page-leaderboard">
+        <div class="page-header">
+          <h1>برترین‌ها</h1>
+        </div>
+        <div id="lbList"></div>
+        <div class="card center-text mt-12 admin-only">
+          <button class="btn" id="clearLbBtn">پاک کردن جدول</button>
+        </div>
+      </section>
+
+      <section class="page" id="page-settings">
+        <div class="page-header">
+          <h1 id="settingsTitle">تنظیمات</h1>
+        </div>
+
+        <div class="card">
+          <div class="section-title">ارتباط با ما</div>
+          <button class="btn primary" id="channelBtn">کانال ما</button>
+        </div>
+
+        <div class="card">
+          <div class="section-title">سایز گرید</div>
+          <div class="setting-row">
+            <div class="setting-label">
+              <span class="icon"></span>
+              <span>انتخاب اندازه</span>
+            </div>
+            <div class="grid-options" id="gridOptions">
+              <button class="grid-opt" data-size="4">۴×۴</button>
+              <button class="grid-opt" data-size="5" data-locked="true">۵×۵ <span class="lock-icon">🔒</span></button>
+              <button class="grid-opt" data-size="6" data-locked="true">۶×۶ <span class="lock-icon">🔒</span></button>
+            </div>
+          </div>
+          <p class="hint-text mt-8">
+            گرید ۵×۵ با ۵۰۰ سکه و گرید ۶×۶ با ۱۰۰۰ سکه باز میشه 🪙
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="section-title">تنظیمات عمومی</div>
+          <div class="setting-row">
+            <div class="setting-label">
+              <span class="icon"></span>
+              <span>صدا</span>
+            </div>
+            <div class="toggle on" id="soundToggle"></div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">
+              <span class="icon"></span>
+              <span>لرزش</span>
+            </div>
+            <div class="toggle on" id="vibrateToggle"></div>
+          </div>
+        </div>
+
+        <div class="card admin-only">
+          <button class="btn btn-danger" id="resetBtn">ریست کامل بازی</button>
+        </div>
+
+        <div class="version-text">2048 - طراحی شده توسط تیم اسکرول</div>
+      </section>
+
+      <section class="page" id="page-profile">
+        <div class="page-header">
+          <h1>پروفایل من</h1>
+        </div>
+
+        <div class="card">
+          <div class="profile-avatar" id="profileAvatar">؟</div>
+          <div class="profile-name-display" id="profileNameDisplay">کاربر مهمان</div>
+          <div class="profile-sub" id="profileSub">اطلاعات پروفایل خود را تکمیل کنید</div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">ویرایش اطلاعات</div>
+          <div class="input-group">
+            <label>نام</label>
+            <input type="text" id="firstNameInput" placeholder="نام خود را وارد کنید" maxlength="20">
+          </div>
+          <div class="input-group">
+            <label>نام خانوادگی</label>
+            <input type="text" id="lastNameInput" placeholder="نام خانوادگی خود را وارد کنید" maxlength="20">
+          </div>
+          <button class="btn primary" id="saveProfileBtn">ذخیره اطلاعات</button>
+        </div>
+
+        <div class="card">
+          <div class="section-title">آمار من</div>
+          <div class="setting-row">
+            <div class="setting-label">🪙 سکه‌ها</div>
+            <div class="lb-score" id="profileCoins">0</div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">🏆 رکورد ۴×۴</div>
+            <div class="lb-score" id="profileBest4">0</div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">🏆 رکورد ۵×۵</div>
+            <div class="lb-score" id="profileBest5">0</div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">🏆 رکورد ۶×۶</div>
+            <div class="lb-score" id="profileBest6">0</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <div class="bottom-nav-wrapper">
+      <nav class="bottom-nav">
+        <button class="nav-item active" data-page="home">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M3 10.5 12 3l9 7.5" />
+              <path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" />
+            </svg>
+          </span>
+          <span class="nav-label">خانه</span>
+          <span class="dot"></span>
+        </button>
+
+        <button class="nav-item" data-page="leaderboard">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M8 21h8" />
+              <path d="M12 17v4" />
+              <path d="M17 4h2a2 2 0 0 1 2 2v3a4 4 0 0 1-4 4" />
+              <path d="M7 4H5a2 2 0 0 0-2 2v3a4 4 0 0 0 4 4" />
+              <path d="M17 4H7v6a5 5 0 0 0 10 0V4Z" />
+            </svg>
+          </span>
+          <span class="nav-label">برترین‌ها</span>
+          <span class="dot"></span>
+        </button>
+
+        <button class="nav-item" data-page="settings">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+            </svg>
+          </span>
+          <span class="nav-label">تنظیمات</span>
+          <span class="dot"></span>
+        </button>
+
+        <button class="nav-item" data-page="profile">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2" />
+            </svg>
+          </span>
+          <span class="nav-label">پروفایل</span>
+          <span class="dot"></span>
+        </button>
+      </nav>
+    </div>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <h3 id="modalTitle">عنوان</h3>
+      <p id="modalText">متن پیام</p>
+      <div class="modal-actions">
+        <button class="btn" id="modalCancel">لغو</button>
+        <button class="btn primary" id="modalConfirm">تایید</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="welcome-overlay" id="welcomeOverlay">
+    <div class="welcome-card">
+      <div class="welcome-title">خوش آمدی! 🎮</div>
+      <div class="welcome-sub">
+        برای شروع بازی، لطفا نام و نام خانوادگی خود را وارد کنید
+        تا در جدول بهترین ها با اسم خودتون دیده بشید.
+      </div>
+      <div class="input-group">
+        <label>نام</label>
+        <input type="text" id="welcomeFirstName" placeholder="نام" maxlength="20">
+      </div>
+      <div class="input-group">
+        <label>نام خانوادگی</label>
+        <input type="text" id="welcomeLastName" placeholder="نام خانوادگی" maxlength="20">
+      </div>
+      <button class="btn primary" id="welcomeSubmitBtn">شروع بازی 🚀</button>
+    </div>
+  </div>
+
+  <div class="admin-indicator">ADMIN</div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // ============================================================
+      // ⚙️ تبلیغات
+      // ============================================================
+      var AD_CHANNELS = [
+        {
+          url: 'https://eitaa.com/scrollbots',
+          image: ''
+        },
+        {
+          url: 'https://eitaa.com/scrollbots',
+          image: ''
+        },
+        {
+          url: 'https://eitaa.com/scrollbots',
+          image: ''
+        },
+        {
+          url: 'https://eitaa.com/scrollbots',
+          image: ''
+        }
+      ];
+      // ============================================================
+
+      // ============ 1) CONFIG ============ */
+      var CONFIG = {
+        STORAGE_KEYS: {
+          gridSize: 'g2048_gridSize',
+          sound: 'g2048_sound',
+          vibrate: 'g2048_vibrate',
+          coins: 'g2048_coins',
+          bestByGrid: 'g2048_best_by_grid',
+          leadersByGrid: 'g2048_leaders_by_grid',
+          adminMode: 'g2048_adminMode',
+          profile: 'g2048_profile',
+          unlockedGrids: 'g2048_unlockedGrids'
+        },
+        UNDO_COST: 50,
+        COIN_DIVISOR: 16,
+        MAX_HISTORY: 10,
+        MAX_LEADERS: 20,
+        ANIMATION_DELAY: 120,
+        SWIPE_THRESHOLD: 30,
+        ADMIN_TAP_COUNT: 5,
+        UNLOCK_COST_5: 500,
+        UNLOCK_COST_6: 1000,
+        MASTER_VOLUME: 0.5,
+        CHANNEL_URL: 'https://eitaa.com/your_channel'
+      };
+
+      // ============ 2) STATE ============ */
+      var state = {
+        page: 'home',
+        gridSize: 4,
+        sound: localStorage.getItem(CONFIG.STORAGE_KEYS.sound) !== 'false',
+        vibrate: localStorage.getItem(CONFIG.STORAGE_KEYS.vibrate) !== 'false',
+        coins: +localStorage.getItem(CONFIG.STORAGE_KEYS.coins) || 0,
+        adminMode: localStorage.getItem(CONFIG.STORAGE_KEYS.adminMode) === 'true',
+        score: 0,
+        tiles: [],
+        history: [],
+        tileIdCounter: 1,
+        gameOver: false,
+        animating: false,
+        profile: JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.profile) || 'null'),
+        unlockedGrids: JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.unlockedGrids) || '[4]'),
+        bestByGrid: JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.bestByGrid) || '{"4":0,"5":0,"6":0}'),
+        leadersByGrid: JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.leadersByGrid) || '{"4":[],"5":[],"6":[]}'),
+        currentAdIndex: 0
+      };
+
+      var savedGrid = +localStorage.getItem(CONFIG.STORAGE_KEYS.gridSize);
+      if (savedGrid && state.unlockedGrids.indexOf(savedGrid) !== -1) {
+        state.gridSize = savedGrid;
+      }
+
+      // ============ 3) DOM ============ */
+      function $(id) { return document.getElementById(id); }
+      var dom = {
+        pageContainer: $('pageContainer'),
+        tilesEl: $('tiles'),
+        gridBg: $('gridBg'),
+        boardWrap: $('boardWrap'),
+        overlay: $('overlay'),
+        overlayTitle: $('overlayTitle'),
+        overlayText: $('overlayText'),
+        overlayBtn: $('overlayBtn'),
+        scoreEl: $('score'),
+        bestEl: $('best'),
+        scoreBox: $('scoreBox'),
+        homeScore: $('homeScore'),
+        homeBest: $('homeBest'),
+        homeCoins: $('homeCoins'),
+        gameCoins: $('gameCoins'),
+        homeLogo: $('homeLogo'),
+        settingsTitle: $('settingsTitle'),
+        startGameBtn: $('startGameBtn'),
+        newBtn: $('newBtn'),
+        undoBtn: $('undoBtn'),
+        channelBtn: $('channelBtn'),
+        resetBtn: $('resetBtn'),
+        clearLbBtn: $('clearLbBtn'),
+        soundToggle: $('soundToggle'),
+        vibrateToggle: $('vibrateToggle'),
+        toast: $('toast'),
+        modalBackdrop: $('modalBackdrop'),
+        modalTitle: $('modalTitle'),
+        modalText: $('modalText'),
+        modalConfirm: $('modalConfirm'),
+        modalCancel: $('modalCancel'),
+        lbList: $('lbList'),
+        welcomeOverlay: $('welcomeOverlay'),
+        welcomeFirstName: $('welcomeFirstName'),
+        welcomeLastName: $('welcomeLastName'),
+        welcomeSubmitBtn: $('welcomeSubmitBtn'),
+        firstNameInput: $('firstNameInput'),
+        lastNameInput: $('lastNameInput'),
+        saveProfileBtn: $('saveProfileBtn'),
+        profileAvatar: $('profileAvatar'),
+        profileNameDisplay: $('profileNameDisplay'),
+        profileSub: $('profileSub'),
+        profileCoins: $('profileCoins'),
+        profileBest4: $('profileBest4'),
+        profileBest5: $('profileBest5'),
+        profileBest6: $('profileBest6'),
+        // تبلیغ کانال
+        channelAd: $('channelAd'),
+        channelAdImg: $('channelAdImg')
+      };
+
+      // ============ 4) SOUND ENGINE ============ */
+      var AudioEngine = (function () {
+        var ctx = null;
+        var master = null;
+        var initialized = false;
+
+        function init() {
+          if (initialized) return;
+          try {
+            var AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return;
+            ctx = new AC();
+            master = ctx.createGain();
+            master.gain.value = CONFIG.MASTER_VOLUME;
+            master.connect(ctx.destination);
+            initialized = true;
+          } catch (e) { }
+        }
+
+        function resume() {
+          if (!initialized) init();
+          if (ctx && ctx.state === 'suspended') {
+            try { ctx.resume(); } catch (e) { }
+          }
+        }
+
+        function canPlay() {
+          return state.sound && initialized && ctx;
+        }
+
+        function playTone(freq, duration, type, volume, detune) {
+          if (!canPlay()) return;
+          try {
+            var now = ctx.currentTime;
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+            osc.type = type || 'sine';
+            osc.frequency.setValueAtTime(freq, now);
+            if (detune) osc.frequency.linearRampToValueAtTime(freq + detune, now + duration);
+            var vol = volume == null ? 0.5 : volume;
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(vol, now + 0.008);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            osc.connect(gain);
+            gain.connect(master);
+            osc.start(now);
+            osc.stop(now + duration + 0.05);
+          } catch (e) { }
+        }
+
+        function playNoise(duration, volume, filterFreq) {
+          if (!canPlay()) return;
+          try {
+            var now = ctx.currentTime;
+            var bufferSize = ctx.sampleRate * duration;
+            var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            var data = buffer.getChannelData(0);
+            for (var i = 0; i < bufferSize; i++) {
+              data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+            }
+            var src = ctx.createBufferSource();
+            src.buffer = buffer;
+            var filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = filterFreq || 800;
+            var gain = ctx.createGain();
+            gain.gain.setValueAtTime(volume || 0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            src.connect(filter);
+            filter.connect(gain);
+            gain.connect(master);
+            src.start(now);
+            src.stop(now + duration);
+          } catch (e) { }
+        }
+
+        return {
+          init: init,
+          resume: resume,
+          move: function () { playNoise(0.08, 0.08, 1200); },
+          merge: function (value) {
+            if (!canPlay()) return;
+            var freq = 300 + Math.log2(value || 2) * 80;
+            playTone(freq, 0.18, 'triangle', 0.4, 30);
+            setTimeout(function () { playTone(freq * 1.5, 0.12, 'sine', 0.25, 0); }, 30);
+          },
+          spawn: function () { playTone(600, 0.06, 'sine', 0.15, 0); },
+          click: function () { playTone(900, 0.04, 'square', 0.12, 0); },
+          coin: function () {
+            playTone(1200, 0.06, 'sine', 0.18, 0);
+            setTimeout(function () { playTone(1600, 0.08, 'sine', 0.15, 0); }, 50);
+          },
+          unlock: function () {
+            playTone(400, 0.1, 'triangle', 0.25, 200);
+            setTimeout(function () { playTone(600, 0.1, 'triangle', 0.25, 200); }, 100);
+            setTimeout(function () { playTone(800, 0.15, 'triangle', 0.3, 100); }, 200);
+          },
+          gameOver: function () {
+            if (!canPlay()) return;
+            [400, 350, 300, 250].forEach(function (f, i) {
+              setTimeout(function () { playTone(f, 0.25, 'sawtooth', 0.18, -50); }, i * 130);
+            });
+          },
+          victory: function () {
+            if (!canPlay()) return;
+            [523, 659, 784, 1047].forEach(function (f, i) {
+              setTimeout(function () { playTone(f, 0.25, 'triangle', 0.3, 0); }, i * 100);
+            });
+          },
+          special2048: function () {
+            if (!canPlay()) return;
+            [523, 659, 784, 1047, 1319].forEach(function (f, i) {
+              setTimeout(function () { playTone(f, 0.3, 'triangle', 0.35, 0); }, i * 80);
+            });
+          },
+          undo: function () { playTone(700, 0.1, 'sine', 0.18, -300); }
+        };
+      })();
+
+      function playSound(type, param) {
+        if (!state.sound) return;
+        AudioEngine.resume();
+        if (typeof AudioEngine[type] === 'function') {
+          try { AudioEngine[type](param); } catch (e) { }
+        }
+      }
+
+      // ============ 5) CHANNEL AD (چرخشی) ============ */
+      function loadChannelAd() {
+        if (!AD_CHANNELS.length) return;
+
+        if (state.currentAdIndex === 0 && !state._adInitialized) {
+          state.currentAdIndex = Math.floor(Math.random() * AD_CHANNELS.length);
+          state._adInitialized = true;
+        }
+
+        var ad = AD_CHANNELS[state.currentAdIndex];
+        if (!ad) return;
+
+        // اگه کانال فقط url داره (بدون عکس)، حالت no-image
+        if (!ad.image) {
+          dom.channelAd.classList.add('no-image');
+          dom.channelAdImg.style.display = 'none';
+          return;
+        }
+
+        dom.channelAdImg.src = ad.image;
+        dom.channelAdImg.onerror = function () {
+          dom.channelAd.classList.add('no-image');
+          dom.channelAdImg.style.display = 'none';
+        };
+        dom.channelAdImg.onload = function () {
+          dom.channelAd.classList.remove('no-image');
+          dom.channelAdImg.style.display = 'block';
+        };
+      }
+
+      function rotateChannelAd() {
+        if (!AD_CHANNELS.length) return;
+        state.currentAdIndex = (state.currentAdIndex + 1) % AD_CHANNELS.length;
+        loadChannelAd();
+      }
+
+      function openChannelAd() {
+        if (!AD_CHANNELS.length) return;
+        var ad = AD_CHANNELS[state.currentAdIndex];
+        if (!ad) return;
+        playSound('click');
+        window.open(ad.url, '_blank');
+        // بعد از کلیک، تبلیغ بعدی رو نشون بده (برای بار بعد که کاربر برگرده)
+        setTimeout(rotateChannelAd, 1000);
+      }
+
+      // در دسترس قرار دادن برای onclick
+      window.openChannelAd = openChannelAd;
+
+      // ============ 6) STORAGE ============ */
+      function saveProfile() { localStorage.setItem(CONFIG.STORAGE_KEYS.profile, JSON.stringify(state.profile)); }
+      function saveUnlocked() { localStorage.setItem(CONFIG.STORAGE_KEYS.unlockedGrids, JSON.stringify(state.unlockedGrids)); }
+      function saveBestByGrid() { localStorage.setItem(CONFIG.STORAGE_KEYS.bestByGrid, JSON.stringify(state.bestByGrid)); }
+      function saveLeadersByGrid() { localStorage.setItem(CONFIG.STORAGE_KEYS.leadersByGrid, JSON.stringify(state.leadersByGrid)); }
+      function saveCoins() { localStorage.setItem(CONFIG.STORAGE_KEYS.coins, state.coins); }
+
+      // ============ 7) UI HELPERS ============ */
+      function toast(msg) {
+        var t = dom.toast;
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(t._timer);
+        t._timer = setTimeout(function () { t.classList.remove('show'); }, 2000);
+      }
+
+      function confirmModal(title, text, onConfirm, confirmText) {
+        dom.modalTitle.textContent = title;
+        dom.modalText.textContent = text;
+        dom.modalBackdrop.classList.add('show');
+        dom.modalConfirm.textContent = confirmText || 'تایید';
+
+        function cleanup() {
+          dom.modalBackdrop.classList.remove('show');
+          dom.modalConfirm.removeEventListener('click', ok);
+          dom.modalCancel.removeEventListener('click', cancel);
+        }
+        function ok() { cleanup(); if (onConfirm) onConfirm(); }
+        function cancel() { cleanup(); }
+        dom.modalConfirm.addEventListener('click', ok);
+        dom.modalCancel.addEventListener('click', cancel);
+      }
+
+      function vibrate(ms) {
+        ms = ms || 15;
+        if (state.vibrate && navigator.vibrate) navigator.vibrate(ms);
+      }
+
+      function updateCoinsUI() {
+        dom.homeCoins.textContent = state.coins;
+        dom.gameCoins.textContent = state.coins;
+        if (dom.profileCoins) dom.profileCoins.textContent = state.coins;
+        saveCoins();
+      }
+
+      function updateHomeStats() {
+        dom.homeScore.textContent = state.score;
+        dom.homeBest.textContent = state.bestByGrid[String(state.gridSize)] || 0;
+        dom.homeCoins.textContent = state.coins;
+      }
+
+      function addCoins(n) {
+        state.coins += n;
+        updateCoinsUI();
+      }
+
+      // ============ 8) ADMIN ============ */
+      function enableAdminMode() {
+        state.adminMode = true;
+        localStorage.setItem(CONFIG.STORAGE_KEYS.adminMode, 'true');
+        document.body.classList.add('admin-mode');
+        toast(' حالت ادمین فعال شد');
+      }
+      function disableAdminMode() {
+        state.adminMode = false;
+        localStorage.removeItem(CONFIG.STORAGE_KEYS.adminMode);
+        document.body.classList.remove('admin-mode');
+        toast(' حالت ادمین غیرفعال شد');
+      }
+      function setupAdminTrigger(element) {
+        if (!element) return;
+        var tapCount = 0, tapTimer = null;
+        element.addEventListener('click', function () {
+          tapCount++;
+          clearTimeout(tapTimer);
+          if (tapCount >= CONFIG.ADMIN_TAP_COUNT) {
+            tapCount = 0;
+            if (state.adminMode) disableAdminMode(); else enableAdminMode();
+            return;
+          }
+          tapTimer = setTimeout(function () { tapCount = 0; }, 1500);
+        });
+      }
+
+      // ============ 9) PROFILE ============ */
+      function hasProfile() {
+        return !!(state.profile && state.profile.firstName && state.profile.lastName);
+      }
+      function getFullName() {
+        if (!hasProfile()) return 'کاربر مهمان';
+        return state.profile.firstName + ' ' + state.profile.lastName;
+      }
+      function getInitial() {
+        if (!hasProfile()) return '؟';
+        return state.profile.firstName.charAt(0) + state.profile.lastName.charAt(0);
+      }
+      function updateProfileUI() {
+        dom.profileAvatar.textContent = getInitial();
+        dom.profileNameDisplay.textContent = getFullName();
+        dom.profileSub.textContent = hasProfile() ? 'به بازی خوش اومدی ' : 'اطلاعات پروفایل خود را تکمیل کنید';
+        dom.firstNameInput.value = state.profile ? state.profile.firstName : '';
+        dom.lastNameInput.value = state.profile ? state.profile.lastName : '';
+        dom.profileCoins.textContent = state.coins;
+        dom.profileBest4.textContent = state.bestByGrid['4'] || 0;
+        dom.profileBest5.textContent = state.bestByGrid['5'] || 0;
+        dom.profileBest6.textContent = state.bestByGrid['6'] || 0;
+      }
+      function showWelcomeIfNeeded() {
+        if (!hasProfile()) {
+          dom.welcomeOverlay.classList.add('show');
+          setTimeout(function () { dom.welcomeFirstName.focus(); }, 300);
+        }
+      }
+      function submitWelcome() {
+        var fn = dom.welcomeFirstName.value.trim();
+        var ln = dom.welcomeLastName.value.trim();
+        if (!fn || !ln) { toast('لطفاً نام و نام خانوادگی را وارد کنید'); return; }
+        if (fn.length < 2 || ln.length < 2) { toast('نام باید حداقل ۲ حرف باشد'); return; }
+        state.profile = { firstName: fn, lastName: ln };
+        saveProfile();
+        dom.welcomeOverlay.classList.remove('show');
+        updateProfileUI();
+        playSound('victory');
+        toast('خوش آمدی ' + fn + ' 🎉');
+      }
+      function saveProfileFromPage() {
+        var fn = dom.firstNameInput.value.trim();
+        var ln = dom.lastNameInput.value.trim();
+        if (!fn || !ln) { toast('لطفاً نام و نام خانوادگی را وارد کنید'); return; }
+        state.profile = { firstName: fn, lastName: ln };
+        saveProfile();
+        updateProfileUI();
+        playSound('click');
+        toast('اطلاعات ذخیره شد ✅');
+        updateMyNameInLeaders();
+      }
+      function updateMyNameInLeaders() {
+        var newName = getFullName();
+        Object.keys(state.leadersByGrid).forEach(function (gridKey) {
+          state.leadersByGrid[gridKey].forEach(function (l) {
+            if (l.isMe) l.name = newName;
+          });
+        });
+        saveLeadersByGrid();
+      }
+
+      // ============ 10) NAVIGATION ============ */
+      function goTo(page) {
+        state.page = page;
+        document.querySelectorAll('.page').forEach(function (p) { p.classList.remove('active'); });
+        document.querySelectorAll('.nav-item').forEach(function (n) {
+          n.classList.toggle('active', n.dataset.page === page);
+        });
+        var el = document.getElementById('page-' + page);
+        if (el) el.classList.add('active');
+        dom.pageContainer.scrollTop = 0;
+        if (page === 'home') {
+          updateHomeStats();
+          // هر بار که به خانه برگشتیم، تبلیغ بعدی رو نشون بده
+          if (state._adInitialized) rotateChannelAd();
+        }
+        if (page === 'leaderboard') renderLeaderboard();
+        if (page === 'profile') updateProfileUI();
+        if (page === 'game' && state.tiles.length === 0) newGame();
+      }
+
+      // ============ 11) TILE HELPERS ============ */
+      function tileClass(v) {
+        if (v <= 2048 && v >= 2) return 't' + v;
+        return 'tbig';
+      }
+      function buildValueGrid() {
+        var g = [];
+        for (var r = 0; r < state.gridSize; r++) g.push(new Array(state.gridSize).fill(0));
+        state.tiles.forEach(function (t) { g[t.r][t.c] = t.value; });
+        return g;
+      }
+      function emptyCells() {
+        var occupied = {};
+        state.tiles.forEach(function (t) { occupied[t.r + '-' + t.c] = true; });
+        var cells = [];
+        for (var r = 0; r < state.gridSize; r++)
+          for (var c = 0; c < state.gridSize; c++)
+            if (!occupied[r + '-' + c]) cells.push({ r: r, c: c });
+        return cells;
+      }
+      function addRandomTile() {
+        var empties = emptyCells();
+        if (!empties.length) return;
+        var cell = empties[Math.floor(Math.random() * empties.length)];
+        var value = Math.random() < 0.9 ? 2 : 4;
+        state.tiles.push({
+          id: state.tileIdCounter++,
+          value: value, r: cell.r, c: cell.c,
+          isNew: true, isMerged: false
+        });
+      }
+      function positionTile(el, r, c) {
+        var gap = 8;
+        var inner = dom.tilesEl.clientWidth;
+        var cellSize = (inner - gap * (state.gridSize - 1)) / state.gridSize;
+        el.style.width = cellSize + 'px';
+        el.style.height = cellSize + 'px';
+        el.style.left = (c * (cellSize + gap)) + 'px';
+        el.style.top = (r * (cellSize + gap)) + 'px';
+        el.style.borderRadius = Math.max(8, cellSize * 0.15) + 'px';
+      }
+
+      // ============ 12) RENDER ============ */
+      function render() {
+        var existing = {};
+        Array.prototype.forEach.call(dom.tilesEl.children, function (el) {
+          existing[el.dataset.id] = el;
+        });
+        var usedIds = {};
+        state.tiles.forEach(function (t) {
+          usedIds[String(t.id)] = true;
+          var el = existing[String(t.id)];
+          if (!el) {
+            el = document.createElement('div');
+            el.dataset.id = t.id;
+            el.className = 'tile ' + tileClass(t.value);
+            el.textContent = t.value;
+            if (t.isNew) el.classList.add('new');
+            dom.tilesEl.appendChild(el);
+          } else {
+            el.className = 'tile ' + tileClass(t.value);
+            el.textContent = t.value;
+          }
+          positionTile(el, t.r, t.c);
+          if (t.isMerged) { el.classList.add('merged'); t.isMerged = false; }
+        });
+        Object.keys(existing).forEach(function (id) {
+          if (!usedIds[id]) existing[id].remove();
+        });
+        dom.scoreEl.textContent = state.score;
+        dom.bestEl.textContent = state.bestByGrid[String(state.gridSize)] || 0;
+      }
+
+      function updateScore(inc) {
+        if (inc > 0) {
+          state.score += inc;
+          var key = String(state.gridSize);
+          if (state.score > (state.bestByGrid[key] || 0)) {
+            state.bestByGrid[key] = state.score;
+            saveBestByGrid();
+          }
+          dom.scoreBox.classList.add('pop');
+          setTimeout(function () { dom.scoreBox.classList.remove('pop'); }, 200);
+          spawnParticles(inc);
+        }
+      }
+
+      function spawnParticles(amount) {
+        var rect = dom.tilesEl.getBoundingClientRect();
+        var cx = rect.left + rect.width / 2;
+        var cy = rect.top + rect.height / 2;
+        var n = Math.min(6 + Math.floor(amount / 8), 12);
+        var colors = ['#ff2ecc', '#00f0ff', '#8b5cf6', '#fbbf24'];
+        for (var i = 0; i < n; i++) {
+          var p = document.createElement('div');
+          p.className = 'particle';
+          var size = 4 + Math.random() * 6;
+          p.style.width = size + 'px';
+          p.style.height = size + 'px';
+          p.style.left = cx + 'px';
+          p.style.top = cy + 'px';
+          var angle = Math.random() * Math.PI * 2;
+          var dist = 60 + Math.random() * 100;
+          p.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+          p.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
+          p.style.background = colors[Math.floor(Math.random() * colors.length)];
+          p.style.boxShadow = '0 0 10px currentColor';
+          document.body.appendChild(p);
+          (function (el) { setTimeout(function () { el.remove(); }, 650); })(p);
+        }
+      }
+
+      // ============ 13) GAME LOGIC ============ */
+      function move(dir) {
+        if (state.animating || state.gameOver) return;
+        var snap = snapshot();
+        var N = state.gridSize;
+        var grid = buildValueGrid();
+        var oldTileAt = {};
+        state.tiles.forEach(function (t) { oldTileAt[t.r + '-' + t.c] = t; });
+        var moved = false;
+        var totalGained = 0;
+        var newTiles = [];
+        var maxMergedValue = 0;
+        var reached2048 = false;
+        var isHorizontal = (dir === 'left' || dir === 'right');
+
+        for (var lineIdx = 0; lineIdx < N; lineIdx++) {
+          var cells = [];
+          for (var i = 0; i < N; i++) {
+            var r, c;
+            if (isHorizontal) {
+              r = lineIdx;
+              c = (dir === 'right') ? (N - 1 - i) : i;
+            } else {
+              c = lineIdx;
+              r = (dir === 'down') ? (N - 1 - i) : i;
+            }
+            cells.push({ r: r, c: c });
+          }
+          var values = cells.map(function (cell) { return grid[cell.r][cell.c]; });
+          var compact = values.filter(function (v) { return v !== 0; });
+          var result = [];
+          var mergedFlags = [];
+          var idx = 0;
+          while (idx < compact.length) {
+            if (idx + 1 < compact.length && compact[idx] === compact[idx + 1]) {
+              var v = compact[idx] * 2;
+              result.push(v);
+              mergedFlags.push(true);
+              totalGained += v;
+              if (v > maxMergedValue) maxMergedValue = v;
+              if (v === 2048) reached2048 = true;
+              idx += 2;
+            } else {
+              result.push(compact[idx]);
+              mergedFlags.push(false);
+              idx += 1;
+            }
+          }
+          while (result.length < N) { result.push(0); mergedFlags.push(false); }
+          var oldTilesInLine = cells.map(function (cell) {
+            return oldTileAt[cell.r + '-' + cell.c] || null;
+          });
+          for (var k = 0; k < N; k++) {
+            if (values[k] !== result[k]) { moved = true; break; }
+          }
+          var usedIdsInLine = {};
+          var lineOldTiles = oldTilesInLine.filter(function (t) { return !!t; });
+          for (var k2 = 0; k2 < N; k2++) {
+            var v2 = result[k2];
+            if (v2 === 0) continue;
+            var cellR = cells[k2].r;
+            var cellC = cells[k2].c;
+            var assignedId = null;
+            var isMergedHere = mergedFlags[k2];
+            var sameCellTile = oldTilesInLine[k2];
+            if (!isMergedHere && sameCellTile && sameCellTile.value === v2 && !usedIdsInLine[sameCellTile.id]) {
+              assignedId = sameCellTile.id;
+            }
+            if (assignedId === null) {
+              var targetSourceValue = isMergedHere ? v2 / 2 : v2;
+              var picked = null;
+              for (var p = 0; p < lineOldTiles.length; p++) {
+                var tt = lineOldTiles[p];
+                if (!usedIdsInLine[tt.id] && tt.value === targetSourceValue) { picked = tt; break; }
+              }
+              if (!picked && isMergedHere) {
+                for (var p2 = 0; p2 < lineOldTiles.length; p2++) {
+                  var tt2 = lineOldTiles[p2];
+                  if (!usedIdsInLine[tt2.id]) { picked = tt2; break; }
+                }
+              }
+              if (picked) assignedId = picked.id;
+            }
+            if (assignedId === null) assignedId = state.tileIdCounter++;
+            usedIdsInLine[assignedId] = true;
+            newTiles.push({
+              id: assignedId, value: v2, r: cellR, c: cellC,
+              isNew: false, isMerged: isMergedHere
+            });
+          }
+        }
+        if (!moved) return;
+
+        state.tiles = newTiles;
+
+        playSound('move');
+        if (totalGained > 0) {
+          if (reached2048) {
+            playSound('special2048');
+          } else {
+            setTimeout(function () { playSound('merge', maxMergedValue); }, 40);
+          }
+        }
+
+        updateScore(totalGained);
+        if (totalGained > 0) {
+          addCoins(Math.floor(totalGained / CONFIG.COIN_DIVISOR));
+          vibrate(20);
+        }
+        state.history.push(snap);
+        if (state.history.length > CONFIG.MAX_HISTORY) state.history.shift();
+        state.animating = true;
+        render();
+        setTimeout(function () {
+          addRandomTile();
+          render();
+          playSound('spawn');
+          state.animating = false;
+          checkGameOver();
+        }, CONFIG.ANIMATION_DELAY);
+      }
+
+      function checkGameOver() {
+        if (emptyCells().length) return;
+        var grid = buildValueGrid();
+        var N = state.gridSize;
+        for (var r = 0; r < N; r++) {
+          for (var c = 0; c < N; c++) {
+            var v = grid[r][c];
+            if (!v) return;
+            if (r + 1 < N && grid[r + 1][c] === v) return;
+            if (c + 1 < N && grid[r][c + 1] === v) return;
+          }
+        }
+
+        var gridKey = String(state.gridSize);
+        var prevBest = state.bestByGrid[gridKey] || 0;
+        var isNewRecord = state.score > prevBest;
+
+        state.gameOver = true;
+        saveLeader();
+
+        if (isNewRecord) {
+          playSound('victory');
+          setTimeout(function () { playSound('gameOver'); }, 900);
+        } else {
+          playSound('gameOver');
+        }
+
+        dom.overlayTitle.textContent = isNewRecord ? 'رکورد جدید! 🏆' : 'بازی تمام شد! 🎯';
+        dom.overlayText.textContent = 'امتیاز نهایی: ' + state.score + ' | سکه: ' + state.coins + '🪙';
+        dom.overlay.classList.add('show');
+        vibrate(100);
+      }
+
+      // ============ 14) SAVE LEADER ============ */
+      function saveLeader() {
+        if (state.score < 10) return;
+        if (!hasProfile()) return;
+        var gridKey = String(state.gridSize);
+        var arr = state.leadersByGrid[gridKey] || [];
+        var myName = getFullName();
+        var existingIndex = -1;
+        for (var i = 0; i < arr.length; i++) {
+          if (arr[i].isMe === true) { existingIndex = i; break; }
+        }
+        var date = new Date().toLocaleDateString('fa-IR');
+        if (existingIndex !== -1) {
+          if (state.score <= arr[existingIndex].score) return;
+          arr[existingIndex] = {
+            name: myName, score: state.score,
+            date: date, isMe: true
+          };
+        } else {
+          arr.push({
+            name: myName, score: state.score,
+            date: date, isMe: true
+          });
+        }
+        arr.sort(function (a, b) { return b.score - a.score; });
+        arr = arr.slice(0, CONFIG.MAX_LEADERS);
+        state.leadersByGrid[gridKey] = arr;
+        saveLeadersByGrid();
+      }
+
+      // ============ 15) NEW GAME / UNDO ============ */
+      function snapshot() {
+        return {
+          tiles: state.tiles.map(function (t) { return Object.assign({}, t); }),
+          score: state.score,
+          tileIdCounter: state.tileIdCounter
+        };
+      }
+      function restore(snap) {
+        state.tiles = snap.tiles.map(function (t) { return Object.assign({}, t); });
+        state.score = snap.score;
+        state.tileIdCounter = snap.tileIdCounter;
+        state.gameOver = false;
+        dom.overlay.classList.remove('show');
+        dom.tilesEl.innerHTML = '';
+        render();
+      }
+      function newGame() {
+        state.tiles = [];
+        state.score = 0;
+        state.history = [];
+        state.tileIdCounter = 1;
+        state.gameOver = false;
+        state.animating = false;
+        dom.overlay.classList.remove('show');
+        dom.tilesEl.innerHTML = '';
+        buildGridBg();
+        addRandomTile();
+        addRandomTile();
+        render();
+        updateHomeStats();
+      }
+      function buildGridBg() {
+        dom.gridBg.innerHTML = '';
+        dom.gridBg.style.gridTemplateColumns = 'repeat(' + state.gridSize + ', 1fr)';
+        dom.gridBg.style.gridTemplateRows = 'repeat(' + state.gridSize + ', 1fr)';
+        for (var i = 0; i < state.gridSize * state.gridSize; i++) {
+          var d = document.createElement('div');
+          d.className = 'cell-bg';
+          dom.gridBg.appendChild(d);
+        }
+      }
+      function undo() {
+        if (state.animating) return;
+        if (!state.history.length) { toast('تاریخچه‌ای وجود ندارد!'); return; }
+        if (state.coins < CONFIG.UNDO_COST) { toast('سکه کافی نداری! نیاز: ' + CONFIG.UNDO_COST + '🪙'); return; }
+        state.coins -= CONFIG.UNDO_COST;
+        updateCoinsUI();
+        var snap = state.history.pop();
+        restore(snap);
+        playSound('undo');
+        toast('بازگشت موفق ✅');
+      }
+
+      // ============ 16) GRID UNLOCK ============ */
+      function isGridUnlocked(size) {
+        return state.unlockedGrids.indexOf(size) !== -1;
+      }
+      function unlockGrid(size, cost) {
+        if (state.coins < cost) { toast('سکه کافی نداری! نیاز: ' + cost + '🪙'); return false; }
+        confirmModal(
+          'باز کردن گرید ' + size + '×' + size + '؟',
+          'این کار ' + cost + ' سکه از شما کم می‌کند. مطمئنی؟',
+          function () {
+            state.coins -= cost;
+            state.unlockedGrids.push(size);
+            saveUnlocked();
+            updateCoinsUI();
+            updateGridUI();
+            playSound('unlock');
+            toast('گرید ' + size + '×' + size + ' باز شد 🎉');
+          }
+        );
+        return true;
+      }
+      function updateGridUI() {
+        document.querySelectorAll('.grid-opt').forEach(function (btn) {
+          var size = +btn.dataset.size;
+          var unlocked = isGridUnlocked(size);
+          btn.classList.toggle('active', size === state.gridSize && unlocked);
+          btn.classList.toggle('locked', !unlocked);
+          var lockIcon = btn.querySelector('.lock-icon');
+          if (!unlocked && !lockIcon) {
+            var span = document.createElement('span');
+            span.className = 'lock-icon';
+            span.textContent = ' 🔒';
+            btn.appendChild(span);
+          } else if (unlocked && lockIcon) {
+            lockIcon.remove();
+          }
+        });
+      }
+
+      // ============ 17) INPUT ============ */
+      function bindKeyboard() {
+        document.addEventListener('keydown', function (e) {
+          if (state.page !== 'game') return;
+          var map = {
+            ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+            w: 'up', s: 'down', a: 'left', d: 'right',
+            W: 'up', S: 'down', A: 'left', D: 'right'
+          };
+          if (map[e.key]) { e.preventDefault(); move(map[e.key]); }
+        });
+      }
+      function bindTouch() {
+        var touchStart = null;
+        dom.boardWrap.addEventListener('touchstart', function (e) {
+          if (e.touches.length !== 1) return;
+          touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+          AudioEngine.resume();
+        }, { passive: true });
+        dom.boardWrap.addEventListener('touchmove', function (e) {
+          if (!touchStart) return;
+          e.preventDefault();
+        }, { passive: false });
+        dom.boardWrap.addEventListener('touchend', function (e) {
+          if (!touchStart) return;
+          var t = e.changedTouches[0];
+          var dx = t.clientX - touchStart.x;
+          var dy = t.clientY - touchStart.y;
+          var ax = Math.abs(dx), ay = Math.abs(dy);
+          if (Math.max(ax, ay) < CONFIG.SWIPE_THRESHOLD) { touchStart = null; return; }
+          if (ax > ay) move(dx > 0 ? 'right' : 'left');
+          else move(dy > 0 ? 'down' : 'up');
+          touchStart = null;
+        }, { passive: true });
+      }
+      function bindMouse() {
+        var mouseStart = null;
+        dom.boardWrap.addEventListener('mousedown', function (e) {
+          mouseStart = { x: e.clientX, y: e.clientY };
+        });
+        window.addEventListener('mouseup', function (e) {
+          if (!mouseStart) return;
+          var dx = e.clientX - mouseStart.x;
+          var dy = e.clientY - mouseStart.y;
+          var ax = Math.abs(dx), ay = Math.abs(dy);
+          if (Math.max(ax, ay) < CONFIG.SWIPE_THRESHOLD) { mouseStart = null; return; }
+          if (ax > ay) move(dx > 0 ? 'right' : 'left');
+          else move(dy > 0 ? 'down' : 'up');
+          mouseStart = null;
+        });
+      }
+
+      // ============ 18) BUTTONS ============ */
+      function bindButtons() {
+        document.body.addEventListener('touchstart', function () {
+          AudioEngine.resume();
+        }, { once: true, passive: true });
+        document.body.addEventListener('click', function () {
+          AudioEngine.resume();
+        }, { once: true });
+
+        document.querySelectorAll('button').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            if (state.sound) {
+              AudioEngine.resume();
+              playSound('click');
+            }
+          });
+        });
+
+        // تبلیغ کانال
+        if (dom.channelAd) {
+          dom.channelAd.addEventListener('click', openChannelAd);
+        }
+
+        dom.welcomeSubmitBtn.addEventListener('click', submitWelcome);
+        dom.welcomeLastName.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') submitWelcome();
+        });
+
+        dom.saveProfileBtn.addEventListener('click', saveProfileFromPage);
+
+        dom.startGameBtn.addEventListener('click', function () {
+          if (!hasProfile()) {
+            dom.welcomeOverlay.classList.add('show');
+            return;
+          }
+          if (state.tiles.length === 0) newGame();
+          goTo('game');
+        });
+
+        dom.newBtn.addEventListener('click', function () {
+          if (state.tiles.length && !state.gameOver) {
+            confirmModal('شروع بازی جدید؟', 'بازی فعلی از دست می‌رود. مطمئنی؟', newGame);
+          } else {
+            newGame();
+          }
+        });
+
+        dom.undoBtn.addEventListener('click', undo);
+        dom.overlayBtn.addEventListener('click', newGame);
+
+        dom.channelBtn.addEventListener('click', function () {
+          if (CONFIG.CHANNEL_URL.indexOf('your_channel') !== -1) {
+            toast('لینک کانال را در کد تنظیم کن!');
+          } else {
+            window.open(CONFIG.CHANNEL_URL, '_blank');
+          }
+        });
+
+        document.querySelectorAll('.grid-opt').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var size = +btn.dataset.size;
+            if (!isGridUnlocked(size)) {
+              var cost = size === 5 ? CONFIG.UNLOCK_COST_5 : CONFIG.UNLOCK_COST_6;
+              unlockGrid(size, cost);
+              return;
+            }
+            if (size === state.gridSize) return;
+            confirmModal(
+              'تغییر سایز گرید؟',
+              'گرید به ' + size + '×' + size + ' تغییر می‌کند و بازی جدید شروع می‌شود.',
+              function () {
+                state.gridSize = size;
+                localStorage.setItem(CONFIG.STORAGE_KEYS.gridSize, size);
+                updateGridUI();
+                newGame();
+                updateHomeStats();
+                toast('گرید ' + size + '×' + size + ' فعال شد ');
+              }
+            );
+          });
+        });
+
+        dom.soundToggle.addEventListener('click', function () {
+          state.sound = !state.sound;
+          this.classList.toggle('on', state.sound);
+          localStorage.setItem(CONFIG.STORAGE_KEYS.sound, state.sound);
+          if (state.sound) {
+            AudioEngine.resume();
+            playSound('click');
+          }
+          toast(state.sound ? 'صدا روشن شد ' : 'صدا خاموش شد ');
+        });
+
+        dom.vibrateToggle.addEventListener('click', function () {
+          state.vibrate = !state.vibrate;
+          this.classList.toggle('on', state.vibrate);
+          localStorage.setItem(CONFIG.STORAGE_KEYS.vibrate, state.vibrate);
+          toast(state.vibrate ? 'لرزش روشن شد ' : 'لرزش خاموش شد');
+        });
+
+        dom.resetBtn.addEventListener('click', function () {
+          confirmModal('ریست کامل؟', 'تمام امتیازات، سکه‌ها و برترین‌ها حذف می‌شوند!', function () {
+            var wasAdmin = state.adminMode;
+            localStorage.clear();
+            state.coins = 0;
+            state.bestByGrid = { '4': 0, '5': 0, '6': 0 };
+            state.score = 0;
+            state.gridSize = 4;
+            state.sound = true;
+            state.vibrate = true;
+            state.adminMode = wasAdmin;
+            state.profile = null;
+            state.unlockedGrids = [4];
+            state.leadersByGrid = { '4': [], '5': [], '6': [] };
+            if (wasAdmin) localStorage.setItem(CONFIG.STORAGE_KEYS.adminMode, 'true');
+            updateCoinsUI();
+            updateHomeStats();
+            updateGridUI();
+            updateProfileUI();
+            dom.soundToggle.classList.add('on');
+            dom.vibrateToggle.classList.add('on');
+            newGame();
+            showWelcomeIfNeeded();
+            toast('همه چیز ریست شد');
+          });
+        });
+
+        dom.clearLbBtn.addEventListener('click', function () {
+          confirmModal('پاک کردن جدول؟', 'همه رکوردها حذف می‌شوند.', function () {
+            state.leadersByGrid = { '4': [], '5': [], '6': [] };
+            saveLeadersByGrid();
+            renderLeaderboard();
+            toast('جدول پاک شد ');
+          });
+        });
+
+        document.querySelectorAll('.nav-item').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            if (state.animating && btn.dataset.page !== 'settings') return;
+            goTo(btn.dataset.page);
+          });
+        });
+      }
+
+      // ============ 19) LEADERBOARD ============ */
+      function renderLeaderboard() {
+        var container = dom.lbList;
+        container.innerHTML = '';
+        var grids = [4, 5, 6];
+        var gridLabels = { 4: '۴×۴', 5: '۵×۵', 6: '۶×۶' };
+
+        grids.forEach(function (size) {
+          var section = document.createElement('div');
+          section.className = 'lb-grid-section';
+          var title = document.createElement('div');
+          title.className = 'lb-grid-title';
+          title.innerHTML = 'گرید ' + gridLabels[size] + ' <span class="badge">' + (state.leadersByGrid[String(size)] || []).length + ' رکورد</span>';
+          section.appendChild(title);
+          var arr = state.leadersByGrid[String(size)] || [];
+          if (!arr.length) {
+            var empty = document.createElement('div');
+            empty.className = 'lb-empty-small';
+            empty.textContent = 'هنوز رکوردی برای این گرید ثبت نشده';
+            section.appendChild(empty);
+          } else {
+            var list = document.createElement('div');
+            list.className = 'lb-list';
+            arr.forEach(function (l, i) {
+              var div = document.createElement('div');
+              div.className = 'lb-item' + (i < 3 ? ' top-' + (i + 1) : '') + (l.isMe ? ' me' : '');
+              div.innerHTML =
+                '<div class="lb-rank">' + (i + 1) + '</div>' +
+                '<div class="lb-info">' +
+                '<div class="lb-name">' + l.name + (l.isMe ? ' (شما)' : '') + '</div>' +
+                '<div class="lb-date">' + l.date + '</div>' +
+                '</div>' +
+                '<div class="lb-score">' + l.score + '</div>';
+              list.appendChild(div);
+            });
+            section.appendChild(list);
+          }
+          container.appendChild(section);
+        });
+      }
+
+      // ============ 20) INIT ============ */
+      function init() {
+        updateCoinsUI();
+        updateHomeStats();
+        updateGridUI();
+        updateProfileUI();
+        dom.soundToggle.classList.toggle('on', state.sound);
+        dom.vibrateToggle.classList.toggle('on', state.vibrate);
+        buildGridBg();
+
+        // بارگذاری تبلیغ کانال
+        loadChannelAd();
+
+        if (state.adminMode) document.body.classList.add('admin-mode');
+        setupAdminTrigger(dom.homeLogo);
+        setupAdminTrigger(dom.settingsTitle);
+
+        bindKeyboard();
+        bindTouch();
+        bindMouse();
+        bindButtons();
+
+        showWelcomeIfNeeded();
+
+        window.addEventListener('resize', function () {
+          if (state.page === 'game') render();
+        });
+      }
+
+      init();
+
+    })();
+  </script>
+</body>
+
+</html>
